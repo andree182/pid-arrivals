@@ -139,6 +139,15 @@ test('search is plain-substring tolerant and rejects empty queries', () => {
   assert.ok(!matches('   ', 'DeKalb Av', []));
 });
 
+test('search disregards diacritics ("zlicin" matches "Zličín", and "Zličín" matches "Zlicin")', () => {
+  assert.ok(matches('zlicin', 'Zličín', []));
+  assert.ok(matches('Zličín', 'Zličín', []));
+  assert.ok(matches('Zlicin', 'Zličín', []));
+  assert.ok(matches('zli', 'Zličín', []));
+  assert.ok(matches('modrany', 'Nádraží Modřany', []));
+  assert.ok(matches('nadrazi modrany', 'Nádraží Modřany', []));
+});
+
 test('exact token matches rank ahead of prefix-only matches ("14 st": 14 St before 145 St)', () => {
   const { _stationRank: rank } = require('./config');
   assert.ok(rank('14 st', '14 St') < rank('14 st', '145 St'));
@@ -176,7 +185,7 @@ test('page behavior: searching "fml123" finds the 6 Av complex; tapping adds it 
   ];
   const html = buildConfigHtml(0, [], db, 0);
   const ids = {};
-  ['favs', 'cap', 'chips', 'search', 'results', 'save', 'clock'].forEach((i) => { ids[i] = el('div'); });
+  ['favs', 'cap', 'chips', 'search', 'results', 'save', 'clock', 'apiKey', 'nmode'].forEach((i) => { ids[i] = el('div'); });
   for (let i = 0; i < 3; i++) {
     const b = el('button'); b.setAttribute('data-clk', i); ids.clock.appendChild(b);
   }

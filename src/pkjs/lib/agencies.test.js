@@ -17,8 +17,15 @@ test('registry exposes mta with a direct transport', () => {
   assert.strictEqual(typeof mta.getArrivals, 'function');
 });
 
-test('get() defaults to mta for an unknown agency id', () => {
-  assert.strictEqual(agencies.get('zzz').id, 'mta');
+test('get() defaults to pid for an unknown agency id', () => {
+  assert.strictEqual(agencies.get('zzz').id, 'pid');
+});
+
+test('stripDiacritics strips accents from Czech characters', () => {
+  assert.strictEqual(agencies._stripDiacritics('Nádraží Modřany'), 'nadrazi modrany');
+  assert.strictEqual(agencies._stripDiacritics('Zličín'), 'zlicin');
+  assert.strictEqual(agencies._stripDiacritics('Černý Most'), 'cerny most');
+  assert.strictEqual(agencies._stripDiacritics('Štěpánská'), 'stepanska');
 });
 
 test('registry resolves the proxied CTA agency', () => {

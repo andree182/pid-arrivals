@@ -20,7 +20,17 @@ function normTokens(s) {
               terrace: 'ter', junction: 'jct',
               first: '1', second: '2', third: '3', fourth: '4', fifth: '5',
               sixth: '6', seventh: '7', eighth: '8', ninth: '9', tenth: '10' };
-  var words = String(s).toLowerCase()
+  var str = String(s).toLowerCase();
+  if (typeof str.normalize === 'function') {
+    str = str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  } else {
+    var dmap = {
+      'á':'a', 'č':'c', 'ď':'d', 'é':'e', 'ě':'e', 'í':'i', 'ň':'n', 'ó':'o',
+      'ř':'r', 'š':'s', 'ť':'t', 'ú':'u', 'ů':'u', 'ý':'y', 'ž':'z'
+    };
+    str = str.replace(/[áčďéěíňóřšťúůýž]/g, function(c) { return dmap[c] || c; });
+  }
+  var words = str
     .replace(/(\d+)(st|nd|rd|th)\b/g, '$1')    // ordinals first: 14th -> 14 (before the
     .replace(/(\d)([a-z])/g, '$1 $2')          // glued split would leave a stray "th")
     .replace(/([a-z])(\d)/g, '$1 $2')          // glued: 6av -> 6 av, av6 -> av 6

@@ -48,6 +48,19 @@ function parseIsoDate(s) {
   return utc;
 }
 
+function stripDiacritics(s) {
+  if (!s) return '';
+  var str = String(s).toLowerCase();
+  if (typeof str.normalize === 'function') {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+  var dmap = {
+    'á':'a', 'č':'c', 'ď':'d', 'é':'e', 'ě':'e', 'í':'i', 'ň':'n', 'ó':'o',
+    'ř':'r', 'š':'s', 'ť':'t', 'ú':'u', 'ů':'u', 'ý':'y', 'ž':'z'
+  };
+  return str.replace(/[áčďéěíňóřšťúůýž]/g, function(c) { return dmap[c] || c; });
+}
+
 function nowSecs() { return Math.floor(Date.now() / 1000); }
 
 function fetchFeed(url, cb) {
@@ -189,17 +202,18 @@ var PID = {
           var now = nowSecs();
           
           var linesMap = {};
-          var filters = station.filterLines ? station.filterLines.split(',').map(function(s){return s.trim().toLowerCase();}).filter(function(s){return s;}) : [];
+          var filters = station.filterLines ? station.filterLines.split(',').map(function(s){return stripDiacritics(s.trim());}).filter(function(s){return s;}) : [];
           
           departures.forEach(function(dep) {
             var line = dep.route.short_name;
             var dest = dep.trip.headsign;
+            var normDest = dest ? stripDiacritics(dest) : '';
             
             if (filters.length > 0) {
               var match = false;
               for (var i=0; i<filters.length; i++) {
                 var f = filters[i];
-                if (line.toLowerCase() === f || (dest && dest.toLowerCase().indexOf(f) >= 0)) {
+                if (line.toLowerCase() === f || (normDest && normDest.indexOf(f) >= 0)) {
                   match = true; break;
                 }
               }
@@ -288,4 +302,4 @@ var REGISTRY = {
 };
 function get(id) { return REGISTRY[id] || PID; }   // default to PID for legacy favorites
 
-module.exports = { get: get, _registry: REGISTRY };
+module.exports = { get: get, _registry: REGISTRY, _stripDiacritics: stripDiacritics };
