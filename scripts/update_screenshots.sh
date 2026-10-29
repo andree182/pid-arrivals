@@ -11,6 +11,8 @@ if [ ${#PLATFORMS[@]} -eq 0 ]; then
   PLATFORMS=("emery" "chalk" "basalt" "diorite" "gabbro")
 fi
 
+sed -i '/SCREENSHOT_EMU/s@^//@@' src/c/favorites.h
+
 echo "==> Building app bundle..."
 pebble build
 
