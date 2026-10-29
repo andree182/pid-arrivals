@@ -46,7 +46,7 @@
         {
           "type": "bitmap",
           "name": "IMAGE_MENU_ICON",
-          "file": "images/menu-icon.png",
+          "file": "images/mini-icon.png",
           "menuIcon": true
         }
       ]
