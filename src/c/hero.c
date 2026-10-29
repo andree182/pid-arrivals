@@ -261,6 +261,10 @@ static void hero_draw_suspended(GContext *ctx, GRect bounds, const Bundle *b, co
     GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
 
+int hero_visible_connections(GRect bounds) {
+  return (bounds.size.h >= 200) ? 3 : 2;
+}
+
 void hero_draw(GContext *ctx, GRect bounds, const Bundle *b, uint8_t line, uint8_t dir, time_t now) {
   if (!b) return;
 
@@ -270,33 +274,88 @@ void hero_draw(GContext *ctx, GRect bounds, const Bundle *b, uint8_t line, uint8
 
   graphics_context_set_antialiased(ctx, true);
 
-  float SX = bounds.size.w / REF_W, SY = bounds.size.h / REF_H;
+  int vis_rows = hero_visible_connections(bounds);
 
   // Top header: station name
   char stn[40];
   hero_station_strip(b->station, stn, sizeof(stn));
   graphics_context_set_text_color(ctx, GColorLightGray);
+#if defined(PBL_ROUND)
+  int top_y = (vis_rows == 3) ? 16 : 10;
+  int top_h = (vis_rows == 3) ? 20 : 16;
   graphics_draw_text(ctx, stn, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD),
-                     GRect(10, 2, bounds.size.w - 20, 16),
+                     GRect(0, top_y, bounds.size.w, top_h),
+                     GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+#else
+  int top_y = (vis_rows == 3) ? 4 : 2;
+  int top_h = (vis_rows == 3) ? 18 : 16;
+  graphics_draw_text(ctx, stn, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD),
+                     GRect(10, top_y, bounds.size.w - 20, top_h),
                      GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+#endif
 
   // Bottom footer: current clock
   char clk[8];
   hero_clock_string(clk, sizeof(clk), s_clock);
+#if defined(PBL_ROUND)
+  int foot_y = bounds.size.h - ((vis_rows == 3) ? 28 : 22);
   graphics_draw_text(ctx, clk, fonts_get_system_font(FONT_KEY_GOTHIC_14),
-                     GRect(10, bounds.size.h - 18, bounds.size.w - 20, 16),
+                     GRect(0, foot_y, bounds.size.w, 16),
                      GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+#else
+  int foot_y = bounds.size.h - 18;
+  graphics_draw_text(ctx, clk, fonts_get_system_font(FONT_KEY_GOTHIC_14),
+                     GRect(10, foot_y, bounds.size.w - 20, 16),
+                     GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+#endif
 
-  // Connections list: 2 connections shown
+  // Connections list
   int tc = get_total_connections(b);
-  int row_h = (int)(62 * SY);
-  int start_y = (int)(22 * SY);
+  int start_y, row_h, r, disc_x, text_x, text_w;
+
+#if defined(PBL_ROUND)
+  if (vis_rows == 3) {
+    // Gabbro (260x260 round, 3 rows)
+    start_y = 40;
+    row_h = 58;
+    r = 18;
+    disc_x = 34;
+    text_x = 60;
+    text_w = bounds.size.w - text_x - 22;
+  } else {
+    // Chalk (180x180 round, 2 rows)
+    start_y = 28;
+    row_h = 58;
+    r = 18;
+    disc_x = 24;
+    text_x = 48;
+    text_w = bounds.size.w - text_x - 14;
+  }
+#else
+  if (vis_rows == 3) {
+    // Emery (200x228 rect, 3 rows)
+    start_y = 25;
+    row_h = 60;
+    r = 20;
+    disc_x = 26;
+    text_x = 52;
+    text_w = bounds.size.w - text_x - 8;
+  } else {
+    // Basalt / Diorite / Flint (144x168 rect, 2 rows)
+    start_y = 22;
+    row_h = 62;
+    r = 22;
+    disc_x = 26;
+    text_x = 52;
+    text_w = bounds.size.w - text_x - 6;
+  }
+#endif
 
   GFont time_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
   GFont desc_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
   GFont next_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < vis_rows; i++) {
     int conn_idx = s_scroll_idx + i;
     if (conn_idx >= tc) break;
 
@@ -306,26 +365,19 @@ void hero_draw(GContext *ctx, GRect bounds, const Bundle *b, uint8_t line, uint8
     const LineView *L = &b->lines[l];
     int row_y = start_y + i * row_h;
 
-    // Center disc vertically in the row
-    int r = (int)(22 * ((SX + SY) / 2));
-    if (r > 22) r = 22; // cap the radius so it fits nicely
-    int disc_x = r + (int)(4 * SX);
     int disc_y = row_y + row_h / 2;
-
-    int text_x = disc_x + r + (int)(4 * SX);
-    int text_w = bounds.size.w - text_x - (int)(6 * SX);
 
     if (L->nDirs > 0) {
       const DirView *D = &L->dirs[d];
       bool isExpress = (D->n > 0) && ((D->expMask & 1) != 0);
       draw_bullet(ctx, GPoint(disc_x, disc_y), r, L, isExpress);
 
-      // Destination headsign (drawn on the first line: line 1)
+      // Destination headsign (drawn on line 1)
       char destStr[40];
       snprintf(destStr, sizeof(destStr), "> %s", D->dest);
       graphics_context_set_text_color(ctx, GColorWhite);
       graphics_draw_text(ctx, destStr, desc_font,
-                         GRect(text_x, row_y + (int)(2 * SY), text_w, (int)(16 * SY)),
+                         GRect(text_x, row_y + 1, text_w, 16),
                          GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
 
       // Nearest time (drawn on line 2)
@@ -340,7 +392,7 @@ void hero_draw(GContext *ctx, GRect bounds, const Bundle *b, uint8_t line, uint8
         }
         graphics_context_set_text_color(ctx, GColorWhite);
         graphics_draw_text(ctx, num, time_font,
-                           GRect(text_x, row_y + (int)(18 * SY), text_w, (int)(20 * SY)),
+                           GRect(text_x, row_y + 17, text_w, 20),
                            GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
       }
 
@@ -356,7 +408,7 @@ void hero_draw(GContext *ctx, GRect bounds, const Bundle *b, uint8_t line, uint8
         }
         graphics_context_set_text_color(ctx, GColorLightGray);
         graphics_draw_text(ctx, next_buf, next_font,
-                           GRect(text_x, row_y + (int)(38 * SY), text_w, (int)(16 * SY)),
+                           GRect(text_x, row_y + 37, text_w, 16),
                            GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
       }
     } else {
@@ -365,20 +417,22 @@ void hero_draw(GContext *ctx, GRect bounds, const Bundle *b, uint8_t line, uint8
 
       graphics_context_set_text_color(ctx, GColorWhite);
       graphics_draw_text(ctx, L->notice, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD),
-                         GRect(text_x, row_y + (int)(12 * SY), text_w, (int)(40 * SY)),
+                         GRect(text_x, row_y + 8, text_w, row_h - 12),
                          GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
     }
 
     // Row separator line
-    if (i < 1 && conn_idx + 1 < tc) {
+    if (i < vis_rows - 1 && conn_idx + 1 < tc) {
       graphics_context_set_stroke_color(ctx, GColorDarkGray);
-      graphics_draw_line(ctx, GPoint(10, row_y + row_h), GPoint(bounds.size.w - 10, row_y + row_h));
+      int sep_inset = PBL_IF_ROUND_ELSE((vis_rows == 3 ? 25 : 15), 10);
+      graphics_draw_line(ctx, GPoint(sep_inset, row_y + row_h),
+                              GPoint(bounds.size.w - sep_inset, row_y + row_h));
     }
   }
 
   // Scroll indicators
-  int top_dots_y = start_y - (int)(8 * SY);
-  int bottom_dots_y = start_y + 2 * row_h - (int)(8 * SY);
+  int top_dots_y = start_y - (PBL_IF_ROUND_ELSE(12, 10));
+  int bottom_dots_y = start_y + vis_rows * row_h - 8;
 
   if (s_scroll_idx > 0) {
     graphics_context_set_text_color(ctx, GColorLightGray);
@@ -386,7 +440,7 @@ void hero_draw(GContext *ctx, GRect bounds, const Bundle *b, uint8_t line, uint8
                        GRect(0, top_dots_y, bounds.size.w, 14),
                        GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
   }
-  if (s_scroll_idx < tc - 2) {
+  if (s_scroll_idx < tc - vis_rows) {
     graphics_context_set_text_color(ctx, GColorLightGray);
     graphics_draw_text(ctx, "...", fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD),
                        GRect(0, bottom_dots_y, bounds.size.w, 14),

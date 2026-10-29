@@ -869,12 +869,24 @@ static void bounce_start(int sign) {
   s_bounce_timer = app_timer_register(33, bounce_step, NULL);
 }
 
+static int visible_connections(void) {
+  if (s_canvas) {
+    return hero_visible_connections(layer_get_bounds(s_canvas));
+  }
+#if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_GABBRO)
+  return 3;
+#else
+  return 2;
+#endif
+}
+
 static void next_line(ClickRecognizerRef r, void *c) {
   ScreenKind sk = current_screen();
   if (sk == SCR_ERROR || sk == SCR_OFFLINE) { retry_connection(); return; }
   if (!s_have_bundle) return;
   int tc = get_total_connections(&s_bundle);
-  if (tc <= 2 || s_scroll_idx >= tc - 2) { bounce_start(+1); return; }
+  int vis = visible_connections();
+  if (tc <= vis || s_scroll_idx >= tc - vis) { bounce_start(+1); return; }
   s_scroll_idx = s_scroll_idx + 1;
   uint8_t tl = 0, td = 0;
   if (get_connection_at(&s_bundle, s_scroll_idx, &tl, &td)) {
@@ -1040,7 +1052,7 @@ static void inbox_received(DictionaryIterator *iter, void *ctx) {
       persist_view();
       s_scroll_idx = get_connection_index(&s_bundle, s_line, s_dir);
       int tc = get_total_connections(&s_bundle);
-      int max_scroll = tc - 2;
+      int max_scroll = tc - visible_connections();
       if (max_scroll < 0) max_scroll = 0;
       if (s_scroll_idx > max_scroll) s_scroll_idx = max_scroll;
       int fi = favorites_index_of(s_bundle.id);
@@ -1083,7 +1095,7 @@ static void load_cached_bundle(void) {
     s_have_bundle = true;
     s_scroll_idx = get_connection_index(&s_bundle, s_line, s_dir);
     int tc = get_total_connections(&s_bundle);
-    int max_scroll = tc - 2;
+    int max_scroll = tc - visible_connections();
     if (max_scroll < 0) max_scroll = 0;
     if (s_scroll_idx > max_scroll) s_scroll_idx = max_scroll;
   }
@@ -1616,7 +1628,7 @@ static void init(void) {
   if (s_have_bundle) {
     s_scroll_idx = get_connection_index(&s_bundle, s_line, s_dir);
     int tc = get_total_connections(&s_bundle);
-    int max_scroll = tc - 2;
+    int max_scroll = tc - visible_connections();
     if (max_scroll < 0) max_scroll = 0;
     if (s_scroll_idx > max_scroll) s_scroll_idx = max_scroll;
   }

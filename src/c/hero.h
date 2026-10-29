@@ -16,6 +16,7 @@ void hero_set_clock_mode(ClockMode mode);
 void hero_clock_string(char *out, size_t n, ClockMode mode);
 int get_total_connections(const Bundle *b);
 bool get_connection_at(const Bundle *b, int conn_idx, uint8_t *out_line, uint8_t *out_dir);
+int hero_visible_connections(GRect bounds);
 
 // Draws the arrivals hero for lines[line].dirs[dir] into ctx over `bounds`.
 // `now` is current epoch secs; countdown = epochBase + delta - now.
