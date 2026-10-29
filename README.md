@@ -16,16 +16,16 @@ The code is based on ["Transit Arrivals"](https://github.com/davidtorcivia/trans
 - Builds for basalt, chalk, diorite, emery, flint, and gabbro, with layouts tuned for rect and round.
 
 <p align="center">
-  <img src="screenshots/live-mbta-emery.png" width="170" alt="MBTA Red line" />
-  <img src="screenshots/live-septa-emery.png" width="170" alt="SEPTA trolley" />
-  <img src="screenshots/sched-trenurbano-emery.png" width="170" alt="Tren Urbano timetable times" />
-  <img src="screenshots/septa-nodata-emery.png" width="170" alt="SEPTA B line NO DATA state" />
+  <img src="screenshots/hero-emery.png" width="170" alt="Muzeum on Pebble Time 2 (emery)" />
+  <img src="screenshots/tram-emery.png" width="170" alt="Hlavní nádraží trams on Pebble Time 2 (emery)" />
+  <img src="screenshots/hero-chalk.png" width="170" alt="Muzeum on Pebble Time Round (chalk)" />
+  <img src="screenshots/hero-diorite.png" width="170" alt="Muzeum on Pebble 2 (diorite b/w)" />
 </p>
 <p align="center">
-  <img src="screenshots/live-gcrta-emery.png" width="170" alt="Cleveland RTA" />
-  <img src="screenshots/live-marta-emery.png" width="170" alt="MARTA Red line" />
-  <img src="screenshots/sched-patco-gabbro.png" width="196" alt="PATCO on the round display" />
-  <img src="screenshots/no-coverage-emery.png" width="170" alt="Outside-coverage state" />
+  <img src="screenshots/hero-gabbro.png" width="196" alt="Muzeum on large round display (gabbro)" />
+  <img src="screenshots/tram-gabbro.png" width="196" alt="Hlavní nádraží on large round display (gabbro)" />
+  <img src="screenshots/hero-basalt.png" width="170" alt="Muzeum on Pebble Time (basalt)" />
+  <img src="screenshots/tram-basalt.png" width="170" alt="Hlavní nádraží on Pebble Time (basalt)" />
 </p>
 
 ## Architecture

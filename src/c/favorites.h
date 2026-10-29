@@ -1,6 +1,9 @@
 #pragma once
 #include <pebble.h>
 
+// Set to 1 to enable predefined screenshot fixture for emulator, 0 for normal
+//#define SCREENSHOT_EMU 1
+
 #define FAV_MAX        10
 #define FAV_ID_LEN     40   // fits the longest real station id (SEPTA, 38 B); matches Bundle.id
 #define FAV_NAME_LEN   48   // >= Bundle.station (25) with headroom

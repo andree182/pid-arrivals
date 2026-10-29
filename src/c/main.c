@@ -100,7 +100,7 @@ static void open_alerts(void);
 static void push_favsync(void);
 static void connect_timeout_cb(void *ctx);
 static void save_cached_bundle(const uint8_t *data, size_t len);
-#ifdef MTA_DEBUG_STUB
+#if defined(MTA_DEBUG_STUB) || defined(SCREENSHOT_EMU)
 static void stub_arrive(void *ctx);
 #endif
 
@@ -260,7 +260,7 @@ static void tx_pump(void) {
 }
 
 static void request_refresh(void) {
-#ifdef MTA_DEBUG_STUB
+#if defined(MTA_DEBUG_STUB) || defined(SCREENSHOT_EMU)
   app_timer_register(1500, stub_arrive, NULL);   // emulate the phone's feed reply
   return;
 #endif
@@ -948,7 +948,7 @@ static void launch_settle_cb(void *ctx) {
 }
 
 static void inbox_received(DictionaryIterator *iter, void *ctx) {
-#ifdef MTA_DEBUG_STUB
+#if defined(MTA_DEBUG_STUB) || defined(SCREENSHOT_EMU)
   (void)iter; (void)ctx; return;   // keep the synthetic bundle; ignore the live feed
 #endif
   Tuple *alerts = dict_find(iter, MESSAGE_KEY_Alerts);
@@ -1062,7 +1062,7 @@ static void inbox_received(DictionaryIterator *iter, void *ctx) {
   render_dispatch();
 }
 
-#ifndef MTA_DEBUG_STUB
+#if !defined(MTA_DEBUG_STUB) && !defined(SCREENSHOT_EMU)
 static void load_cached_bundle(void) {
   // One-time cleanup of the legacy single-key cache (it could never hold a
   // multi-line bundle; see PERSIST_BUNDLE_LEN).
@@ -1111,39 +1111,122 @@ static void save_cached_bundle(const uint8_t *data, size_t len) {
   persist_write_int(PERSIST_BUNDLE_LEN, (int)len);
 }
 
-#ifdef MTA_DEBUG_STUB
-// Synthetic bundle so the hero renders in the emulator, which has no live MTA
+#if defined(MTA_DEBUG_STUB) || defined(SCREENSHOT_EMU)
+// Synthetic bundle so the hero renders in the emulator, which has no live MTA/PID
 // feed. Lets us screenshot and tune the flip/zip without hardware. Compiled in
-// only when MTA_DEBUG_STUB is defined (never in a release build).
+// only when MTA_DEBUG_STUB or SCREENSHOT_EMU is defined (never in a release build).
 static void load_stub_bundle(void) {
   Bundle *B = &s_bundle;
   memset(B, 0, sizeof(*B));
   B->version = 6;
   B->epochBase = (uint32_t)time(NULL);
-  strncpy(B->station, "Times Sq-42 St", sizeof(B->station) - 1);
-  strncpy(B->id, "127", sizeof(B->id) - 1);
-  struct { const char *label; uint8_t r, g, b; const char *n; const char *s;
-           uint16_t d0, d1; } rows[] = {
-    { "1", 238, 53, 46, "Van Cortlandt Park", "South Ferry", 90, 540 },
-    { "2", 238, 53, 46, "Wakefield-241 St", "Flatbush Av", 240, 720 },
-    { "7", 185, 51, 173, "Flushing-Main St", "34 St-Hudson Yds", 60, 300 },
-    { "A", 0, 57, 166, "Inwood-207 St", "Far Rockaway", 720, 1320 },
-    { "N", 252, 204, 10, "Astoria-Ditmars", "Coney Island", 180, 600 },
-    { "Q", 252, 204, 10, "96 St-2 Av", "Coney Island", 1080, 1680 },
-  };
-  B->nLines = sizeof(rows) / sizeof(rows[0]);
-  if (B->nLines > MAX_LINES) B->nLines = MAX_LINES;
-  for (uint8_t i = 0; i < B->nLines; i++) {
-    LineView *L = &B->lines[i];
-    strncpy(L->label, rows[i].label, sizeof(L->label) - 1);
-    L->r = rows[i].r; L->g = rows[i].g; L->b = rows[i].b;
-    L->nDirs = 2;
-    DirView *N = &L->dirs[0];
-    strncpy(N->dest, rows[i].n, sizeof(N->dest) - 1);
-    strcpy(N->dirLabel, "MANHATTAN"); N->n = 3; N->delta[0] = rows[i].d0; N->delta[1] = rows[i].d0 + 360; N->delta[2] = rows[i].d0 + 900;
-    DirView *S = &L->dirs[1];
-    strncpy(S->dest, rows[i].s, sizeof(S->dest) - 1);
-    strcpy(S->dirLabel, "BROOKLYN"); S->n = 3; S->delta[0] = rows[i].d1; S->delta[1] = rows[i].d1 + 420; S->delta[2] = rows[i].d1 + 1020;
+
+  uint8_t sel = s_sel;
+  if (sel == 0) {
+    snprintf(B->station, sizeof(B->station), "Muzeum");
+    snprintf(B->id, sizeof(B->id), "Muzeum");
+    B->nLines = 2;
+    // Line A (Green)
+    LineView *La = &B->lines[0];
+    snprintf(La->label, sizeof(La->label), "A");
+    La->r = 0; La->g = 165; La->b = 98;
+    La->nDirs = 2;
+    snprintf(La->dirs[0].dest, sizeof(La->dirs[0].dest), "Nemocnice Motol");
+    La->dirs[0].dirLabel[0] = '\0';
+    La->dirs[0].n = 3; La->dirs[0].delta[0] = 120; La->dirs[0].delta[1] = 420; La->dirs[0].delta[2] = 720;
+    snprintf(La->dirs[1].dest, sizeof(La->dirs[1].dest), "Depo Hostivař");
+    La->dirs[1].dirLabel[0] = '\0';
+    La->dirs[1].n = 3; La->dirs[1].delta[0] = 180; La->dirs[1].delta[1] = 480; La->dirs[1].delta[2] = 780;
+
+    // Line C (Red)
+    LineView *Lc = &B->lines[1];
+    snprintf(Lc->label, sizeof(Lc->label), "C");
+    Lc->r = 217; Lc->g = 34; Lc->b = 42;
+    Lc->nDirs = 2;
+    snprintf(Lc->dirs[0].dest, sizeof(Lc->dirs[0].dest), "Háje");
+    Lc->dirs[0].dirLabel[0] = '\0';
+    Lc->dirs[0].n = 3; Lc->dirs[0].delta[0] = 60; Lc->dirs[0].delta[1] = 300; Lc->dirs[0].delta[2] = 540;
+    snprintf(Lc->dirs[1].dest, sizeof(Lc->dirs[1].dest), "Letňany");
+    Lc->dirs[1].dirLabel[0] = '\0';
+    Lc->dirs[1].n = 3; Lc->dirs[1].delta[0] = 240; Lc->dirs[1].delta[1] = 480; Lc->dirs[1].delta[2] = 720;
+  } else if (sel == 1) {
+    snprintf(B->station, sizeof(B->station), "Hlavní nádraží");
+    snprintf(B->id, sizeof(B->id), "Hlavní nádraží");
+    B->nLines = 3;
+    // Line C (Red)
+    LineView *Lc = &B->lines[0];
+    snprintf(Lc->label, sizeof(Lc->label), "C");
+    Lc->r = 217; Lc->g = 34; Lc->b = 42;
+    Lc->nDirs = 2;
+    snprintf(Lc->dirs[0].dest, sizeof(Lc->dirs[0].dest), "Háje");
+    Lc->dirs[0].dirLabel[0] = '\0';
+    Lc->dirs[0].n = 3; Lc->dirs[0].delta[0] = 90; Lc->dirs[0].delta[1] = 330; Lc->dirs[0].delta[2] = 570;
+    snprintf(Lc->dirs[1].dest, sizeof(Lc->dirs[1].dest), "Letňany");
+    Lc->dirs[1].dirLabel[0] = '\0';
+    Lc->dirs[1].n = 3; Lc->dirs[1].delta[0] = 210; Lc->dirs[1].delta[1] = 450; Lc->dirs[1].delta[2] = 690;
+
+    // Tram 9
+    LineView *L9 = &B->lines[1];
+    snprintf(L9->label, sizeof(L9->label), "9");
+    L9->r = 217; L9->g = 34; L9->b = 42;
+    L9->nDirs = 2;
+    snprintf(L9->dirs[0].dest, sizeof(L9->dirs[0].dest), "Sídliště Řepy");
+    L9->dirs[0].dirLabel[0] = '\0';
+    L9->dirs[0].n = 3; L9->dirs[0].delta[0] = 180; L9->dirs[0].delta[1] = 540; L9->dirs[0].delta[2] = 900;
+    snprintf(L9->dirs[1].dest, sizeof(L9->dirs[1].dest), "Spojovací");
+    L9->dirs[1].dirLabel[0] = '\0';
+    L9->dirs[1].n = 3; L9->dirs[1].delta[0] = 300; L9->dirs[1].delta[1] = 660; L9->dirs[1].delta[2] = 1020;
+
+    // Tram 26
+    LineView *L26 = &B->lines[2];
+    snprintf(L26->label, sizeof(L26->label), "26");
+    L26->r = 217; L26->g = 34; L26->b = 42;
+    L26->nDirs = 2;
+    snprintf(L26->dirs[0].dest, sizeof(L26->dirs[0].dest), "Divoká Šárka");
+    L26->dirs[0].dirLabel[0] = '\0';
+    L26->dirs[0].n = 3; L26->dirs[0].delta[0] = 240; L26->dirs[0].delta[1] = 600; L26->dirs[0].delta[2] = 960;
+    snprintf(L26->dirs[1].dest, sizeof(L26->dirs[1].dest), "Hostivař");
+    L26->dirs[1].dirLabel[0] = '\0';
+    L26->dirs[1].n = 3; L26->dirs[1].delta[0] = 420; L26->dirs[1].delta[1] = 780; L26->dirs[1].delta[2] = 1140;
+  } else {
+    snprintf(B->station, sizeof(B->station), "Anděl");
+    snprintf(B->id, sizeof(B->id), "Anděl");
+    B->nLines = 3;
+    // Line B (Yellow)
+    LineView *Lb = &B->lines[0];
+    snprintf(Lb->label, sizeof(Lb->label), "B");
+    Lb->r = 250; Lb->g = 197; Lb->b = 0;
+    Lb->nDirs = 2;
+    snprintf(Lb->dirs[0].dest, sizeof(Lb->dirs[0].dest), "Černý Most");
+    Lb->dirs[0].dirLabel[0] = '\0';
+    Lb->dirs[0].n = 3; Lb->dirs[0].delta[0] = 120; Lb->dirs[0].delta[1] = 360; Lb->dirs[0].delta[2] = 600;
+    snprintf(Lb->dirs[1].dest, sizeof(Lb->dirs[1].dest), "Zličín");
+    Lb->dirs[1].dirLabel[0] = '\0';
+    Lb->dirs[1].n = 3; Lb->dirs[1].delta[0] = 240; Lb->dirs[1].delta[1] = 480; Lb->dirs[1].delta[2] = 720;
+
+    // Tram 9
+    LineView *L9 = &B->lines[1];
+    snprintf(L9->label, sizeof(L9->label), "9");
+    L9->r = 217; L9->g = 34; L9->b = 42;
+    L9->nDirs = 2;
+    snprintf(L9->dirs[0].dest, sizeof(L9->dirs[0].dest), "Sídliště Řepy");
+    L9->dirs[0].dirLabel[0] = '\0';
+    L9->dirs[0].n = 3; L9->dirs[0].delta[0] = 150; L9->dirs[0].delta[1] = 510; L9->dirs[0].delta[2] = 870;
+    snprintf(L9->dirs[1].dest, sizeof(L9->dirs[1].dest), "Spojovací");
+    L9->dirs[1].dirLabel[0] = '\0';
+    L9->dirs[1].n = 3; L9->dirs[1].delta[0] = 270; L9->dirs[1].delta[1] = 630; L9->dirs[1].delta[2] = 990;
+
+    // Tram 10
+    LineView *L10 = &B->lines[2];
+    snprintf(L10->label, sizeof(L10->label), "10");
+    L10->r = 217; L10->g = 34; L10->b = 42;
+    L10->nDirs = 2;
+    snprintf(L10->dirs[0].dest, sizeof(L10->dirs[0].dest), "Sídliště Řepy");
+    L10->dirs[0].dirLabel[0] = '\0';
+    L10->dirs[0].n = 3; L10->dirs[0].delta[0] = 180; L10->dirs[0].delta[1] = 660; L10->dirs[0].delta[2] = 1020;
+    snprintf(L10->dirs[1].dest, sizeof(L10->dirs[1].dest), "Ďáblice");
+    L10->dirs[1].dirLabel[0] = '\0';
+    L10->dirs[1].n = 3; L10->dirs[1].delta[0] = 360; L10->dirs[1].delta[1] = 840; L10->dirs[1].delta[2] = 1200;
   }
   s_have_bundle = true;
 }
@@ -1480,15 +1563,26 @@ int get_connection_index(const Bundle *b, uint8_t line, uint8_t dir) {
 static void init(void) {
   favorites_load();
   viewmem_load();
+#ifdef SCREENSHOT_EMU
+  s_nearest_pos = 254; // Turn off Nearest slot for screenshots so 1st favorite is focused
+  // Clear any old persisted bundle so stale US data from prior runs is purged
+  for (int k = 0; k < BUNDLE_CHUNKS; k++) {
+    if (persist_exists(PERSIST_BUNDLE_CHUNK0 + k)) persist_delete(PERSIST_BUNDLE_CHUNK0 + k);
+  }
+  if (persist_exists(PERSIST_BUNDLE_LEN)) persist_delete(PERSIST_BUNDLE_LEN);
+  if (persist_exists(PERSIST_BUNDLE)) persist_delete(PERSIST_BUNDLE);
+  s_have_bundle = false;
+#else
   s_nearest_pos = persist_exists(PERSIST_NEAREST_POS)
     ? (uint8_t)persist_read_int(PERSIST_NEAREST_POS) : 0;
   if (s_nearest_pos == 255) {                  // migrate legacy "off" -> permanent on
     s_nearest_pos = 0;
     persist_write_int(PERSIST_NEAREST_POS, s_nearest_pos);
   }
+#endif
   s_clock_mode = persist_exists(PERSIST_CLOCK) ? (uint8_t)persist_read_int(PERSIST_CLOCK) : CLOCK_AUTO;
   hero_set_clock_mode((ClockMode)s_clock_mode);
-#ifdef MTA_DEBUG_STUB
+#if defined(MTA_DEBUG_STUB) || defined(SCREENSHOT_EMU)
   // Cold-start into the loading interstitial, then simulate a feed arrival so
   // the riffle settles — there is no phone to deliver data in the emulator.
   app_timer_register(1500, stub_arrive, NULL);
@@ -1574,7 +1668,7 @@ static void init(void) {
 
   tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
   s_poll = app_timer_register(30000, poll_cb, NULL);
-#ifndef MTA_DEBUG_STUB
+#if !defined(MTA_DEBUG_STUB) && !defined(SCREENSHOT_EMU)
   connect_wd_arm();   // a silent phone (slow JS / disconnected) must not spin forever
 #endif
 

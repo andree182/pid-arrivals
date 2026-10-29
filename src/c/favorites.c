@@ -101,7 +101,44 @@ static void migrate_legacy(void) {
   if (persist_exists(LEGACY_STATION_ID)) persist_delete(LEGACY_STATION_ID);
 }
 
+#ifdef SCREENSHOT_EMU
+static void load_screenshot_favs(void) {
+  s_count = 3;
+  strncpy(s_favs[0].id, "Muzeum", FAV_ID_LEN - 1);
+  s_favs[0].id[FAV_ID_LEN - 1] = '\0';
+  strncpy(s_favs[0].name, "Muzeum", FAV_NAME_LEN - 1);
+  s_favs[0].name[FAV_NAME_LEN - 1] = '\0';
+  strncpy(s_favs[0].label, "Metro A/C", FAV_LABEL_LEN - 1);
+  s_favs[0].label[FAV_LABEL_LEN - 1] = '\0';
+  strncpy(s_favs[0].agency, "pid", FAV_AGENCY_LEN - 1);
+  s_favs[0].agency[FAV_AGENCY_LEN - 1] = '\0';
+
+  strncpy(s_favs[1].id, "Hlavní nádraží", FAV_ID_LEN - 1);
+  s_favs[1].id[FAV_ID_LEN - 1] = '\0';
+  strncpy(s_favs[1].name, "Hlavní nádraží", FAV_NAME_LEN - 1);
+  s_favs[1].name[FAV_NAME_LEN - 1] = '\0';
+  strncpy(s_favs[1].label, "Metro C", FAV_LABEL_LEN - 1);
+  s_favs[1].label[FAV_LABEL_LEN - 1] = '\0';
+  strncpy(s_favs[1].agency, "pid", FAV_AGENCY_LEN - 1);
+  s_favs[1].agency[FAV_AGENCY_LEN - 1] = '\0';
+
+  strncpy(s_favs[2].id, "Anděl", FAV_ID_LEN - 1);
+  s_favs[2].id[FAV_ID_LEN - 1] = '\0';
+  strncpy(s_favs[2].name, "Anděl", FAV_NAME_LEN - 1);
+  s_favs[2].name[FAV_NAME_LEN - 1] = '\0';
+  strncpy(s_favs[2].label, "Metro B/Tram", FAV_LABEL_LEN - 1);
+  s_favs[2].label[FAV_LABEL_LEN - 1] = '\0';
+  strncpy(s_favs[2].agency, "pid", FAV_AGENCY_LEN - 1);
+  s_favs[2].agency[FAV_AGENCY_LEN - 1] = '\0';
+}
+#endif
+
 void favorites_load(void) {
+#ifdef SCREENSHOT_EMU
+  load_screenshot_favs();
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "favorites_load (SCREENSHOT_EMU): %d", (int)s_count);
+  return;
+#endif
   s_count = 0;
   if (!persist_exists(PERSIST_FAV_COUNT)) { migrate_legacy(); return; }
   int c = persist_read_int(PERSIST_FAV_COUNT);

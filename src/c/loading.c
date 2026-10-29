@@ -60,9 +60,13 @@ static int rnd(int n) { return n > 0 ? (rand() % n) : 0; }
 // position; we draw LOADING there rather than riffling a real direction word.
 static void seed_builtin(void) {
   static const struct { const char *l; uint8_t r, g, b; } BT[RIFFLE_N] = {
-    { "1", 238, 49, 42 }, { "4", 0, 147, 60 }, { "7", 185, 51, 173 },
-    { "A", 0, 57, 166 },  { "B", 255, 99, 25 }, { "G", 108, 190, 69 },
-    { "N", 252, 204, 10 },
+    { "A", 0, 165, 98 },   // PID Metro A (Green)
+    { "B", 250, 197, 0 },  // PID Metro B (Yellow)
+    { "C", 217, 34, 42 },  // PID Metro C (Red)
+    { "9", 217, 34, 42 },  // PID Tram 9 (Red)
+    { "22", 217, 34, 42 }, // PID Tram 22 (Red)
+    { "S", 0, 114, 198 },  // PID Train S (Blue)
+    { "119", 0, 114, 198 } // PID Bus 119 (Blue)
   };
   memset(&s_builtin, 0, sizeof(s_builtin));
   s_builtin.nLines = LAND_LINE + 1;
@@ -73,7 +77,7 @@ static void seed_builtin(void) {
     L->r = BT[i].r; L->g = BT[i].g; L->b = BT[i].b;
   }
   s_builtin.lines[LAND_LINE] = s_builtin.lines[0];   // placeholder until landing
-  strncpy(s_builtin.station, "STATION", sizeof(s_builtin.station) - 1);
+  strncpy(s_builtin.station, "PID", sizeof(s_builtin.station) - 1);
 
   LineView *L0 = &s_builtin.lines[0];
   L0->nDirs = 1;

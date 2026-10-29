@@ -5,9 +5,38 @@ var config = require('./lib/config');
 var agencies = require('./lib/agencies');
 var alertsLib = require('./lib/alerts');
 
+// #ifdef SCREENSHOT_EMU
+var SCREENSHOT_EMU = true;
+var PREDEFINED_API_KEY = ""; // <-- Insert your Golemio API key here
+var PREDEFINED_FAVS = [
+  { id: "Muzeum", name: "Muzeum", label: "Metro A/C", agency: "pid", filterLines: "A, C" },
+  { id: "Hlavní nádraží", name: "Hlavní nádraží", label: "Metro C", agency: "pid", filterLines: "C" },
+  { id: "Anděl", name: "Anděl", label: "Metro B/Tram", agency: "pid", filterLines: "B, 9, 10" }
+];
+// #endif
+
 function loadMirror() {
-  try { return JSON.parse(localStorage.getItem('mta_favs')) || { nearestPos: 0, favs: [], apiKey: '', nearestFavsOnly: false }; }
-  catch (e) { return { nearestPos: 0, favs: [], apiKey: '', nearestFavsOnly: false }; }
+  var m;
+  try { m = JSON.parse(localStorage.getItem('mta_favs')); } catch (e) {}
+  if (!m) m = { nearestPos: 0, favs: [], apiKey: '', nearestFavsOnly: false };
+  if (SCREENSHOT_EMU) {
+    if (PREDEFINED_API_KEY) m.apiKey = PREDEFINED_API_KEY;
+    if (!m.favs || m.favs.length === 0) {
+      m.favs = PREDEFINED_FAVS.slice();
+      m.nearestPos = 254;
+    } else {
+      for (var p = 0; p < PREDEFINED_FAVS.length; p++) {
+        var pf = PREDEFINED_FAVS[p];
+        for (var f = 0; f < m.favs.length; f++) {
+          if (m.favs[f].id === pf.id && !m.favs[f].filterLines) {
+            m.favs[f].filterLines = pf.filterLines;
+            break;
+          }
+        }
+      }
+    }
+  }
+  return m;
 }
 function saveMirror(obj) {
   try { localStorage.setItem('mta_favs', JSON.stringify(obj)); } catch (e) {}
@@ -109,6 +138,14 @@ function handleRequest(msg) {
         if (mirror.favs[i].id === msg.StationId) {
           st.filterLines = mirror.favs[i].filterLines;
           break;
+        }
+      }
+      if (SCREENSHOT_EMU && !st.filterLines) {
+        for (var p = 0; p < PREDEFINED_FAVS.length; p++) {
+          if (PREDEFINED_FAVS[p].id === msg.StationId) {
+            st.filterLines = PREDEFINED_FAVS[p].filterLines;
+            break;
+          }
         }
       }
       st.apiKey = mirror.apiKey;
